@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RNClinic - ניהול קליניקה להשתלת שיער</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div class="login-screen" id="login-screen">
+      <div class="login-card">
+        <div class="login-brand">
+          <img id="login-logo" alt="RNClinic Logo" />
+          <h2>התחברות למערכת</h2>
+        </div>
+        <p class="form-status" id="login-status" role="status" aria-live="polite"></p>
+        <form class="form-grid" id="login-form">
+          <label class="field">
+            שם משתמש
+            <input type="text" name="username" autocomplete="username" />
+          </label>
+          <label class="field">
+            סיסמה
+            <input type="password" name="password" autocomplete="current-password" />
+          </label>
+          <button class="primary-btn" type="submit">התחברות</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="layout" id="app-layout">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <p class="brand-title">RNClinic</p>
+          <p class="sidebar-title">תפריט ראשי</p>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="nav-item" data-section="overview">
+            <span class="nav-icon">📊</span>
+            <span>לוח בקרה</span>
+          </button>
+          <button class="nav-item is-active" data-section="dashboard">
+            <span class="nav-icon">📅</span>
+            <span>יומן</span>
+          </button>
+          <button class="nav-item" data-section="staff">
+            <span class="nav-icon">👩‍⚕️</span>
+            <span>צוות עובדים</span>
+          </button>
+          <button class="nav-item" data-section="clients">
+            <span class="nav-icon">👥</span>
+            <span>לקוחות</span>
+          </button>
+          <button class="nav-item" data-section="transplants">
+            <span class="nav-icon">🧬</span>
+            <span>השתלות</span>
+          </button>
+          <button class="nav-item" data-section="finance">
+            <span class="nav-icon">💳</span>
+            <span>כספים</span>
+          </button>
+          <button class="nav-item" data-section="reports">
+            <span class="nav-icon">📈</span>
+            <span>דוחות</span>
+          </button>
+          <button class="nav-item" data-section="leads">
+            <span class="nav-icon">🧲</span>
+            <span>לידים</span>
+          </button>
+          <button class="nav-item" data-section="settings">
+            <span class="nav-icon">⚙️</span>
+            <span>הגדרות</span>
+          </button>
+        </nav>
+      </aside>
+
+      <div class="content">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">RNClinic</p>
+            <h1>ניהול קליניקה להשתלת שיער</h1>
+            <p class="subtitle">לוח השתלות, צוות, כספים ומעקב שעות במקום אחד.</p>
+          </div>
+          <button class="ghost-btn" id="logout-button" type="button">התנתקות</button>
+        </header>
+
+        <main>
+          <section class="section" data-section="overview">
+            <div class="section-header">
+              <div>
+                <h2>לוח בקרה</h2>
+                <p class="muted">מדדים מרכזיים של הקליניקה.</p>
+              </div>
+            </div>
+            <div class="grid">
+              <article class="card">
+                <h3>השתלות שבוצעו מתחילת השנה</h3>
+                <strong class="metric-value" id="metric-year-completed">0</strong>
+              </article>
+              <article class="card">
+                <h3>השתלות שבוצעו מתחילת החודש</h3>
+                <strong class="metric-value" id="metric-month-completed">0</strong>
+              </article>
+              <article class="card">
+                <h3>השתלות מתוכננות בעתיד</h3>
+                <strong class="metric-value" id="metric-upcoming">0</strong>
+              </article>
+              <article class="card placeholder-card">
+                <h3>מדדים נוספים</h3>
+                <p class="muted">בקרוב נוסיף נתונים נוספים.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="section is-active" data-section="dashboard">
+            <div class="section-header">
+              <div>
+                <h2>יומן והשתלות</h2>
+                <p class="muted">סקירה יומית של השתלות לפי תאריך.</p>
+              </div>
+              <label class="field inline-field">
+                <strong>בחירת תאריך</strong>
+                <input
+                  id="dashboard-date"
+                  name="dashboardDate"
+                  type="date"
+                  autocomplete="off"
+                />
+              </label>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>השתלות לפי תאריך</h3>
+              </div>
+              <div class="table" id="daily-transplants-table"></div>
+            </div>
+            <div class="card" id="upcoming-calendar-card">
+              <div class="card-header">
+                <h3>השתלות מתוכננות לפי חודש</h3>
+                <label class="field inline-field">
+                  <strong>בחירת חודש</strong>
+                  <input id="upcoming-month" type="month" autocomplete="off" />
+                </label>
+                <button class="ghost-btn" id="calendar-export" type="button">ייצוא PDF</button>
+              </div>
+              <div class="upcoming-calendar" id="upcoming-calendar"></div>
+            </div>
+          </section>
+
+          <section class="section" data-section="clients">
+            <div class="section-header">
+              <div>
+                <h2>לקוחות</h2>
+                <p class="muted">ניהול מטופלים, תהליכים ותורים עתידיים.</p>
+              </div>
+              <button class="primary-btn" data-action="add-client">לקוח חדש</button>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>רשימת לקוחות</h3>
+                <div class="card-actions">
+                  <input
+                    class="input"
+                    id="clients-search"
+                    name="clientsSearch"
+                    type="search"
+                    placeholder="חיפוש לפי שם/טלפון"
+                    autocomplete="off"
+                  />
+                  <button class="ghost-btn" data-action="filter-clients">סינון</button>
+                </div>
+              </div>
+              <div class="table" id="clients-table"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>כרטיס לקוח</h3>
+                <button class="ghost-btn" data-action="edit-client">עריכת פרטים</button>
+              </div>
+              <div class="client-card">
+                <div>
+                  <p class="muted">שם מלא</p>
+                  <p class="client-value" id="client-name">רון לוי</p>
+                </div>
+                <div>
+                  <p class="muted">טלפון</p>
+                  <p class="client-value" id="client-phone">050-123-4567</p>
+                </div>
+                <div>
+                  <p class="muted">אימייל</p>
+                  <p class="client-value" id="client-email">ron.levy@example.com</p>
+                </div>
+                <div>
+                  <p class="muted">סטטוס</p>
+                  <span class="tag" id="client-status">בתהליך</span>
+                </div>
+              </div>
+              <div class="client-history">
+                <h4>היסטוריית טיפולים</h4>
+                <div class="table" id="client-history-table"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>כרטיס לקוח</h3>
+                <button class="ghost-btn" type="submit" form="client-form">שמירה</button>
+              </div>
+              <p class="form-status" id="client-form-status" role="status" aria-live="polite"></p>
+              <form class="form-grid" id="client-form">
+                <label class="field">
+                  מזהה לקוח
+                  <input type="text" name="id" value="AUTO" readonly autocomplete="off" />
+                </label>
+                <label class="field">
+                  שם פרטי
+                  <input type="text" name="firstName" placeholder="רון" autocomplete="given-name" />
+                </label>
+                <label class="field">
+                  שם משפחה
+                  <input type="text" name="lastName" placeholder="לוי" autocomplete="family-name" />
+                </label>
+                <label class="field">
+                  טלפון
+                  <input type="tel" name="phone" placeholder="050-123-4567" autocomplete="tel" />
+                </label>
+                <label class="field">
+                  אימייל
+                  <input type="email" name="email" placeholder="ron@example.com" autocomplete="email" />
+                </label>
+                <label class="field">
+                  טיפול נוכחי
+                  <input type="text" name="treatment" placeholder="FUE 2500" autocomplete="off" />
+                </label>
+                <label class="field">
+                  סטטוס
+                  <select name="status">
+                    <option>בתהליך</option>
+                    <option>ייעוץ</option>
+                    <option>הסתיים</option>
+                  </select>
+                </label>
+              </form>
+            </div>
+          </section>
+
+          <section class="section" data-section="transplants">
+            <div class="section-header">
+              <div>
+                <h2>השתלות</h2>
+                <p class="muted">פתיחת טיפול חדש וניהול השתלות קיימות.</p>
+              </div>
+              <button class="primary-btn" data-action="new-transplant">השתלה חדשה</button>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>כרטיס השתלה</h3>
+                <div class="card-actions">
+                  <button class="ghost-btn" data-action="transplant-summary">סיכום השתלה</button>
+                  <button class="ghost-btn" type="submit" form="transplant-form">שמירה</button>
+                </div>
+              </div>
+              <p class="form-status" id="transplant-form-status" role="status" aria-live="polite"></p>
+              <form class="form-grid" id="transplant-form">
+                <label class="field">
+                  תאריך
+                  <input type="date" name="date" autocomplete="off" />
+                </label>
+                <label class="field">
+                  שעה
+                  <select name="time" id="transplant-time"></select>
+                </label>
+                <label class="field">
+                  לקוח (חיפוש לפי שם/טלפון)
+                  <input
+                    type="search"
+                    name="client"
+                    list="clients-datalist"
+                    placeholder="לדוגמה: רון לוי / 050-123-4567"
+                    autocomplete="off"
+                  />
+                </label>
+                <datalist id="clients-datalist"></datalist>
+                <label class="field">
+                  סוג טיפול
+                  <select name="type">
+                    <option>השתלת שיער</option>
+                    <option>השתלת גבות</option>
+                    <option>אחר</option>
+                  </select>
+                </label>
+                <label class="field">
+                  כמות זקיקים
+                  <input type="number" name="grafts" placeholder="2500" autocomplete="off" />
+                </label>
+                <label class="field">
+                  מספר השתלה
+                  <input type="text" name="id" value="AUTO" readonly autocomplete="off" />
+                </label>
+                <label class="field">
+                  סטטוס
+                  <select name="status">
+                    <option>מתוכנן</option>
+                    <option>בוצע</option>
+                    <option>נדחה</option>
+                    <option>בוטל</option>
+                  </select>
+                </label>
+                <label class="field">
+                  מחיר שסוכם
+                  <input type="number" name="price" placeholder="₪" autocomplete="off" />
+                </label>
+                <label class="field">
+                  רופא ראשי
+                  <select name="leadDoctor">
+                    <option value="">בחר רופא</option>
+                  </select>
+                </label>
+                <label class="field">
+                  טכנאית 1
+                  <select name="tech1">
+                    <option value="">בחר טכנאית</option>
+                  </select>
+                </label>
+                <label class="field">
+                  טכנאית 2
+                  <select name="tech2">
+                    <option value="">בחר טכנאית</option>
+                  </select>
+                </label>
+                <label class="field">
+                  טכנאית 3
+                  <select name="tech3">
+                    <option value="">בחר טכנאית</option>
+                  </select>
+                </label>
+                <label class="field">
+                  תמונות לפני
+                  <input type="file" name="beforePhotos" autocomplete="off" />
+                </label>
+                <label class="field">
+                  תמונות אחרי
+                  <input type="file" name="afterPhotos" autocomplete="off" />
+                </label>
+              </form>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>השתלות אחרונות שנקבעו</h3>
+                <div class="card-actions">
+                  <label class="field inline-field">
+                    חיפוש לפי מס' השתלה
+                    <input id="transplants-search" name="transplantsSearch" type="search" />
+                  </label>
+                  <label class="field inline-field">
+                    בחירת חודש
+                    <input id="transplants-month" type="month" autocomplete="off" />
+                  </label>
+                </div>
+              </div>
+              <div class="table" id="transplants-table"></div>
+            </div>
+          </section>
+
+          <section class="section" data-section="staff">
+            <div class="section-header">
+              <div>
+                <h2>צוות עובדים</h2>
+                <p class="muted">ניהול עובדים, זמינות ושעות.</p>
+              </div>
+              <div class="card-actions">
+                <button class="primary-btn" data-action="add-staff">הוספת עובד</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>סטטוס צוות</h3>
+              </div>
+              <p class="muted">בחר עובד מהרשימה כדי לעדכן את פרטיו.</p>
+              <div class="table" id="staff-table-standalone"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>כרטיס עובד</h3>
+                <button class="ghost-btn" type="submit" form="staff-form">שמירה</button>
+              </div>
+              <p class="form-status" id="staff-form-status" role="status" aria-live="polite"></p>
+              <form class="form-grid" id="staff-form">
+                <label class="field">
+                  מספר עובד
+                  <input type="text" name="id" value="AUTO" readonly autocomplete="off" />
+                </label>
+                <label class="field">
+                  שם פרטי
+                  <input type="text" name="firstName" placeholder="דנה" autocomplete="given-name" />
+                </label>
+                <label class="field">
+                  שם משפחה
+                  <input type="text" name="lastName" placeholder="כהן" autocomplete="family-name" />
+                </label>
+                <label class="field">
+                  תפקיד
+                  <select name="role">
+                    <option>רופא</option>
+                    <option>טכנאית</option>
+                    <option>עוזרת</option>
+                  </select>
+                </label>
+                <label class="field">
+                  סוג משרה
+                  <select name="employmentType">
+                    <option>שעתי</option>
+                    <option>לפי השתלה</option>
+                    <option>גלובלי</option>
+                  </select>
+                </label>
+                <label class="field">
+                  תאריך קליטה
+                  <input type="date" name="startDate" autocomplete="off" />
+                </label>
+                <div class="form-section">
+                  <p class="form-section-title">שכר שעתי</p>
+                  <label class="field">
+                    שכר לשעה
+                    <input type="number" name="hourlyRate" placeholder="₪" autocomplete="off" />
+                  </label>
+                </div>
+                <div class="form-section">
+                  <p class="form-section-title">שכר לפי השתלה</p>
+                  <label class="field">
+                    שכר להשתלה 1
+                    <input type="number" name="perTransplant1" placeholder="₪" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    שכר להשתלה 2
+                    <input type="number" name="perTransplant2" placeholder="₪" autocomplete="off" />
+                  </label>
+                </div>
+                <div class="form-section">
+                  <p class="form-section-title">שכר גלובלי</p>
+                  <label class="field">
+                    שכר גלובלי
+                    <input type="number" name="globalSalary" placeholder="₪" autocomplete="off" />
+                  </label>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section class="section" data-section="finance">
+            <div class="section-header">
+              <div>
+                <h2>כספים</h2>
+                <p class="muted">ניהול תקציב חודשי, הוצאות והכנסות.</p>
+              </div>
+              <div class="card-actions">
+                <label class="field inline-field">
+                  בחירת חודש
+                  <input id="finance-month" name="financeMonth" type="month" />
+                </label>
+                <button class="primary-btn" data-action="finance-add" hidden>הוספת רשומה</button>
+              </div>
+            </div>
+            <div class="finance-layout">
+              <div class="card">
+              <div class="card-header">
+                <h3>סיכום חודשי</h3>
+              </div>
+              <div class="finance-summary" id="finance-summary-standalone"></div>
+            </div>
+              <div class="card">
+                <div class="card-header">
+                  <h3>הוספת הוצאה / הכנסה</h3>
+                  <button class="ghost-btn" type="submit" form="finance-form">שמירה</button>
+                </div>
+                <p class="form-status" id="finance-form-status" role="status" aria-live="polite"></p>
+                <form class="form-grid" id="finance-form">
+                  <label class="field">
+                    מזהה רשומה
+                    <input type="text" name="id" value="AUTO" readonly autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    סוג
+                    <select name="type">
+                      <option>הוצאה</option>
+                      <option>הכנסה</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    קטגוריה
+                    <input type="text" name="category" placeholder="שכירות" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    סכום
+                    <input type="number" name="amount" placeholder="₪" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    הערות
+                    <input type="text" name="notes" placeholder="פירוט נוסף" autocomplete="off" />
+                  </label>
+                </form>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <h3>רשומות חודשיות</h3>
+                </div>
+                <div class="table" id="finance-table"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" data-section="reports">
+            <div class="section-header">
+              <div>
+                <h2>דוחות</h2>
+                <p class="muted">ניתוח ביצועים, תפוסה ורווחיות.</p>
+              </div>
+              <div class="card-actions">
+                <button class="primary-btn" id="report-show" type="button">הצג</button>
+                <button class="ghost-btn" id="report-reset" type="button">איפוס</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>בחירת דוח</h3>
+              </div>
+              <div class="form-grid">
+                <label class="field">
+                  סוג דוח
+                  <select id="report-type">
+                    <option value="payroll">שכר עובדים</option>
+                    <option value="transplants-by-employee">השתלות לפי עובד</option>
+                    <option value="transplants-by-status">השתלות לפי סטטוס</option>
+                  </select>
+                </label>
+                <label class="field">
+                  חודש
+                  <input id="report-month" type="month" autocomplete="off" />
+                </label>
+              </div>
+              <p class="form-status" id="report-status" role="status" aria-live="polite"></p>
+            </div>
+            <div class="card is-hidden" id="report-hourly-card">
+              <div class="card-header">
+                <h3>שעות לתשלום לעובדים שעתי</h3>
+                <button class="ghost-btn" id="report-hours-save" type="button">
+                  שמירת שעות
+                </button>
+              </div>
+              <div class="table" id="report-hourly-table"></div>
+            </div>
+            <div class="card is-hidden" id="report-results-card">
+              <div class="card-header">
+                <h3>שכר עובדים</h3>
+              </div>
+              <div class="table" id="report-results-table"></div>
+              <div class="report-summary">
+                <span>סה״כ שכר לתשלום</span>
+                <strong id="report-total">₪0</strong>
+              </div>
+            </div>
+            <div class="card is-hidden" id="report-employee-picker-card">
+              <div class="card-header">
+                <h3>בחירת עובדים להשתלות</h3>
+                <button class="ghost-btn" id="report-employee-save" type="button">שמירה</button>
+              </div>
+              <div class="table" id="report-employee-picker-table"></div>
+            </div>
+            <div class="card is-hidden" id="report-employee-results-card">
+              <div class="card-header">
+                <h3>השתלות לפי עובד</h3>
+              </div>
+              <div class="table" id="report-employee-results-table"></div>
+            </div>
+            <div class="card is-hidden" id="report-status-picker-card">
+              <div class="card-header">
+                <h3>בחירת סטטוס להשתלות</h3>
+                <button class="ghost-btn" id="report-status-save" type="button">שמירה</button>
+              </div>
+              <div class="table" id="report-status-picker-table"></div>
+            </div>
+            <div class="card is-hidden" id="report-status-results-card">
+              <div class="card-header">
+                <h3>השתלות לפי סטטוס</h3>
+              </div>
+              <div class="table" id="report-status-results-table"></div>
+            </div>
+          </section>
+
+          <section class="section" data-section="settings">
+            <div class="section-header">
+              <div>
+                <h2>הגדרות</h2>
+                <p class="muted">הגדרות מערכת, משתמשים והרשאות.</p>
+              </div>
+              <button class="primary-btn">עדכון הגדרות</button>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>רשימת משתמשים במערכת</h3>
+                <button class="ghost-btn" id="delete-user-button" type="button">מחיקה</button>
+              </div>
+              <div class="table" id="settings-users-table"></div>
+              <div class="settings-form">
+                <h4>הוספת משתמש</h4>
+                <form class="form-grid" id="add-user-form">
+                  <label class="field">
+                    שם משתמש
+                    <input type="text" name="newUsername" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    סיסמה
+                    <input type="password" name="newPassword" autocomplete="new-password" />
+                  </label>
+                  <label class="field">
+                    אישור סיסמה
+                    <input type="password" name="confirmPassword" autocomplete="new-password" />
+                  </label>
+                  <button class="ghost-btn" type="submit">אישור</button>
+                </form>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>לוגו החברה</h3>
+              </div>
+              <label class="field">
+                העלאת לוגו
+                <input type="file" id="settings-logo" accept="image/*" />
+              </label>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>הרחבות נוספות</h3>
+              </div>
+              <p class="muted">בקרוב נרחיב את מסך ההגדרות לניהול מתקדם.</p>
+            </div>
+          </section>
+
+          <section class="section" data-section="leads">
+            <div class="section-header">
+              <div>
+                <h2>לידים</h2>
+                <p class="muted">מסך זה נמצא בבנייה.</p>
+              </div>
+            </div>
+            <div class="card">
+              <p class="muted">בנייה.</p>
+            </div>
+          </section>
+        </main>
+
+        <footer class="page-footer">
+          <p>גרסת MVP ראשונית • נתוני דוגמה לצורך הדגמה בלבד.</p>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      window.RNCLINIC_API_BASE = "http://10.0.0.21:5001/api";
+    </script>
+    <script src="app.js"></script>
+  </body>
+</html>
