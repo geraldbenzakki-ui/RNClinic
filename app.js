@@ -167,11 +167,25 @@ const createRow = (values, rowClass = "") => {
 
 const normalizeDate = (value) => {
   if (!value) return "";
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const base = new Date(Date.UTC(1899, 11, 30));
+    const date = new Date(base.getTime() + value * 86400000);
+    if (!Number.isNaN(date.getTime())) {
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(date.getUTCDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+  }
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     const year = value.getFullYear();
     const month = String(value.getMonth() + 1).padStart(2, "0");
     const day = String(value.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+  }
+  if (typeof value === "string" && value.includes("T")) {
+    const [datePart] = value.split("T");
+    if (datePart) return datePart;
   }
   if (value.includes("-")) {
     return value;
@@ -229,6 +243,9 @@ const financeIncomeTable = document.querySelector("#finance-income-table");
 const financeTable = document.querySelector("#finance-table");
 const financeForm = document.querySelector("#finance-form");
 const financeFormStatus = document.querySelector("#finance-form-status");
+const inventoryTable = document.querySelector("#inventory-table");
+const inventoryForm = document.querySelector("#inventory-form");
+const inventoryFormStatus = document.querySelector("#inventory-form-status");
 const reportTypeSelect = document.querySelector("#report-type");
 const reportMonthInput = document.querySelector("#report-month");
 const reportShowButton = document.querySelector("#report-show");
@@ -292,6 +309,7 @@ let currentClients = [...clients];
 let currentStaff = [...staffRecords];
 let currentTransplants = [...transplants];
 let currentFinance = [];
+let currentInventory = [];
 let transplantSortAsc = true;
 
 const setFormStatus = (element, message = "", type = "") => {
@@ -488,6 +506,9 @@ navItems.forEach((item) => {
     }
     if (target === "finance") {
       renderFinanceSection();
+    }
+    if (target === "inventory") {
+      renderInventoryTable(currentInventory);
     }
   });
 });
@@ -1016,6 +1037,57 @@ const renderFinanceSection = () => {
   );
   populateFinanceSummary(financeSummaryStandalone, summary);
   renderFinanceTable(monthRows, monthKey);
+};
+
+
+const normalizeInventoryStatus = (quantityValue, minValue, statusValue) => {
+  const quantity = Number(quantityValue);
+  const min = Number(minValue);
+  if (Number.isFinite(quantity) && Number.isFinite(min)) {
+    if (quantity <= 0) return "אזל";
+    if (quantity <= min) return "נמוך";
+    return "במלאי";
+  }
+  return statusValue || "במלאי";
+};
+
+const renderInventoryTable = (rows = []) => {
+  if (!inventoryTable) return;
+  inventoryTable.innerHTML = "";
+  inventoryTable.append(
+    createRow(
+      [
+        { label: "מס' פריט", className: "header" },
+        { label: "שם פריט", className: "header" },
+        { label: "קטגוריה", className: "header" },
+        { label: "כמות", className: "header" },
+        { label: "מינימום", className: "header" },
+        { label: "סטטוס", className: "header" },
+        { label: "ספק", className: "header" },
+        { label: "עלות", className: "header" },
+        { label: "הערות", className: "header" },
+      ],
+      "finance-row"
+    )
+  );
+  rows.forEach((row) => {
+    inventoryTable.append(
+      createRow(
+        [
+          row.id || "-",
+          row.itemName || "-",
+          row.category || "-",
+          row.quantity || "0",
+          row.minQuantity || "0",
+          row.status || "-",
+          row.supplier || "-",
+          formatCurrency(parseCurrency(row.cost)),
+          row.notes || "-",
+        ],
+        "finance-row"
+      )
+    );
+  });
 };
 
 const getStaffDisplayName = (record) => {
@@ -2051,18 +2123,25 @@ const mapClientRow = (row) => ({
 });
 
 const mapTransplantRow = (row) => ({
-  id: row.id || row["מספר השתלה"] || row["מס' השתלה"],
-  date: normalizeDate(row.date || row["תאריך"]),
-  time: row.time || row["שעה"],
-  client: row.client || row["לקוח"],
-  type: row.type || row["סוג טיפול"],
-  grafts: row.grafts || row["זקיקים"],
-  price: row.price || row["מחיר"],
-  leadDoctor: row.leadDoctor || row["רופא מוביל"],
-  tech1: row.tech1 || row["טכנאית 1"],
-  tech2: row.tech2 || row["טכנאית 2"],
-  tech3: row.tech3 || row["טכנאית 3"],
-  status: row.status || row["סטטוס"],
+  id: row.id || row["מספר השתלה"] || row["מס' השתלה"] || row["מספר"],
+  date: normalizeDate(
+    row.date || row["תאריך"] || row["תאריך השתלה"] || row["תאריך ניתוח"]
+  ),
+  time: row.time || row["שעה"] || row["שעת התחלה"],
+  client:
+    row.client ||
+    row["לקוח"] ||
+    row["שם לקוח"] ||
+    row["שם המטופל"] ||
+    row["מטופל"],
+  type: row.type || row["סוג טיפול"] || row["סוג"],
+  grafts: row.grafts || row["זקיקים"] || row["כמות זקיקים"],
+  price: row.price || row["מחיר"] || row["עלות"],
+  leadDoctor: row.leadDoctor || row["רופא מוביל"] || row["רופא"],
+  tech1: row.tech1 || row["טכנאית 1"] || row["טכנאי 1"],
+  tech2: row.tech2 || row["טכנאית 2"] || row["טכנאי 2"],
+  tech3: row.tech3 || row["טכנאית 3"] || row["טכנאי 3"],
+  status: row.status || row["סטטוס"] || row["מצב"],
 });
 
 const mapFinanceRow = (row) => ({
@@ -2074,25 +2153,48 @@ const mapFinanceRow = (row) => ({
   notes: row.notes || row["הערות"],
 });
 
+const mapInventoryRow = (row) => {
+  const quantity = row.quantity || row["כמות"] || row["מלאי"] || "";
+  const minQuantity = row.minQuantity || row["כמות מינימום"] || row["מינימום"] || "";
+  const status = normalizeInventoryStatus(quantity, minQuantity, row.status || row["סטטוס"]);
+  return {
+    id: row.id || row["מספר פריט"] || row["מס' פריט"] || row["מספר"] || "",
+    itemName: row.itemName || row["שם פריט"] || row["פריט"] || "",
+    category: row.category || row["קטגוריה"] || "",
+    sku: row.sku || row["מק״ט"] || row["מקט"] || "",
+    unit: row.unit || row["יחידה"] || row["יחידת מידה"] || "",
+    quantity,
+    minQuantity,
+    supplier: row.supplier || row["ספק"] || "",
+    cost: row.cost || row["עלות"] || row["עלות יחידה"] || "",
+    status,
+    lastUpdated: normalizeDate(row.lastUpdated || row["תאריך עדכון"] || getTodayValue()),
+    notes: row.notes || row["הערות"] || "",
+  };
+};
+
 const loadFromApi = async () => {
   try {
-    const [clientsRows, staffRows, transplantRows, financeRows] =
+    const [clientsRows, staffRows, transplantRows, financeRows, inventoryRows] =
       await Promise.all([
       getJson("/clients"),
       getJson("/staff"),
       getJson("/transplants"),
       getJson("/finance"),
+      getJson("/inventory"),
     ]);
 
     const mappedClients = clientsRows.map(mapClientRow);
     const mappedStaff = staffRows.map(mapStaffRow);
     const mappedTransplants = transplantRows.map(mapTransplantRow);
     const mappedFinance = financeRows.map(mapFinanceRow);
+    const mappedInventory = inventoryRows.map(mapInventoryRow);
 
     currentClients = mappedClients;
     currentStaff = mappedStaff;
     currentTransplants = mappedTransplants;
     currentFinance = mappedFinance;
+    currentInventory = mappedInventory;
 
     window.RNCLINIC_CLIENTS = mappedClients;
     renderClientsTable(mappedClients);
@@ -2108,6 +2210,7 @@ const loadFromApi = async () => {
     }
     renderUpcomingCalendar(mappedTransplants);
     renderFinanceSection();
+    renderInventoryTable(mappedInventory);
     renderUsersTable();
     updateDashboardMetrics();
   } catch (error) {
@@ -2116,9 +2219,11 @@ const loadFromApi = async () => {
     currentStaff = [...staffRecords];
     currentTransplants = [...transplants];
     currentFinance = [];
+    currentInventory = [];
     renderStaffOptions(staffRecords);
     renderClientOptions(clients);
     renderFinanceSection();
+    renderInventoryTable([]);
     renderUpcomingCalendar(transplants);
     renderUsersTable();
     updateDashboardMetrics();
@@ -2174,6 +2279,25 @@ const buildTransplantPayload = (formData) => ({
   tech3: formData.get("tech3") || "",
   status: formData.get("status") || "מתוכנן",
 });
+
+const buildInventoryPayload = (formData) => {
+  const quantity = formData.get("quantity") || "";
+  const minQuantity = formData.get("minQuantity") || "";
+  return {
+    id: formData.get("id") || "",
+    itemName: formData.get("itemName") || "",
+    category: formData.get("category") || "",
+    sku: formData.get("sku") || "",
+    unit: formData.get("unit") || "",
+    quantity,
+    minQuantity,
+    supplier: formData.get("supplier") || "",
+    cost: formData.get("cost") || "",
+    status: normalizeInventoryStatus(quantity, minQuantity, formData.get("status") || ""),
+    lastUpdated: getTodayValue(),
+    notes: formData.get("notes") || "",
+  };
+};
 
 const fillStaffForm = (record) => {
   if (!staffForm || !record) return;
@@ -2347,6 +2471,38 @@ if (financeForm) {
   });
 }
 
+if (inventoryForm) {
+  inventoryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const itemId = ensureUniqueAutoId(
+      inventoryForm.querySelector('[name="id"]'),
+      currentInventory
+    );
+    const payload = buildInventoryPayload(new FormData(inventoryForm));
+    payload.id = itemId;
+    try {
+      setFormStatus(inventoryFormStatus, "שומר פריט...");
+      if (recordExistsById(currentInventory, itemId)) {
+        await putJson(`/inventory/${itemId}`, payload);
+      } else {
+        await postJson('/inventory', payload);
+      }
+      await loadFromApi();
+      setFormStatus(inventoryFormStatus, "הפריט נשמר בהצלחה.", "success");
+      inventoryForm.reset();
+      ensureUniqueAutoId(inventoryForm.querySelector('[name="id"]'), currentInventory);
+      setActiveSection('inventory');
+    } catch (error) {
+      setFormStatus(
+        inventoryFormStatus,
+        "שמירת הפריט נכשלה. ודא שהשרת פועל ושהחיבור ל-API זמין.",
+        "error"
+      );
+      console.warn('Failed to save inventory record.', error);
+    }
+  });
+}
+
 if (clientForm) {
   clientForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -2436,6 +2592,15 @@ document.querySelectorAll("[data-action='finance-add']").forEach((button) => {
     ensureUniqueAutoId(financeForm?.querySelector("[name='id']"), currentFinance);
     setFormStatus(financeFormStatus);
     financeForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
+
+document.querySelectorAll("[data-action='inventory-add']").forEach((button) => {
+  button.addEventListener("click", () => {
+    inventoryForm?.reset();
+    ensureUniqueAutoId(inventoryForm?.querySelector("[name='id']"), currentInventory);
+    setFormStatus(inventoryFormStatus);
+    inventoryForm?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 });
 
